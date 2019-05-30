@@ -17,6 +17,18 @@ services:
     ports:
       - 127.0.0.1:3306:3306
 
+  phpmyadmin:
+      image: phpmyadmin/phpmyadmin
+      container_name: dockerdev-phpmyadmin
+      network_mode: bridge
+      ports:
+        - "8081:80"
+      links:
+        - "db:mysql"
+      environment:
+        PMA_HOST: "mysql"
+        PMA_PORT: 3306
+
   mailcatch:
     image: mailhog/mailhog
     network_mode: bridge
