@@ -6,4 +6,5 @@
 /docker-custom.yml
 /conf
 /.env
+/.idea
 
