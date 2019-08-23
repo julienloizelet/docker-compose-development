@@ -11,7 +11,17 @@ init() {
 
     DEV_COMMANDPATH=${DEV_PATH}/dev_command;
 
+    DEV_SUDO='';
+    if [ -z "`groups | grep docker`" ]; then
+        DEV_SUDO='sudo -E';
+    fi
+
     DEV_WORKSPACE_PATH="${DEV_WORKPATH}/workspace";
+    local DOCKERDEV_WORKSPACE=`${DEV_SUDO} docker volume inspect -f '{{ .Options.device }}' dockerdev-workspace-volume 2>/dev/null`;
+    if [ "${DOCKERDEV_WORKSPACE}" != "" ]; then
+        DEV_WORKSPACE_PATH=${DOCKERDEV_WORKSPACE};
+    fi
+
     DEV_WORKSPACE="`echo ${DEV_WORKSPACE_PATH} | sed -e 's/\\//\\\\\//g'`";
     DEV_PROJECTPATH=`echo ${DEV_USERDIR} | sed -e "s/${DEV_WORKSPACE}\///"`;
 
@@ -22,33 +32,29 @@ init() {
         DEV_INTERACTIVE=true;
     fi
 
-    DEV_SUDO='';
-    if [ -z "`groups | grep docker`" ]; then
-        DEV_SUDO='sudo -E';
-    fi
-
     dc env conf/mysql; # fallback
     dc env .env;
 
     DEV_YML='';
     dc yml 'docker-compose.yml';
     dc yml_if 'build/dist/docker-compose-blackfire.yml' 'conf/blackfire';
-    dc yml_if 'docker-custom.yml' 'docker-custom.yml';
     dc yml_if 'build/dist/docker-compose-varnish.yml' 'conf/varnish.vcl' || dc yml 'build/dist/docker-compose-no-varnish.yml';
-    dc yml_os;
+    dc yml_if 'build/dist/docker-compose-elasticsearch.yml' 'conf/elasticsearch';
+    dc yml_if 'build/dist/docker-compose-rabbitmq.yml' 'conf/rabbitmq';
+    dc yml_if 'docker-custom.yml' 'docker-custom.yml';
     dc yml_ssh;
 
     dc mode 'run --rm';
 
     DEV_DOCKEROPTS='';
-    DEV_COMMAND=$1;
+    DEV_COMMAND='';
     DEV_HOSTNAME='';
 
     if [ "${DEV_PROJECTPATH}" == "${DEV_USERDIR}" ]; then
         # Not in WORKSPACE
         DEV_PROJECTPATH='';
     else
-        DEV_HOSTNAME=`echo ${DEV_PROJECTPATH} | sed -e 's/\//\./g' -e 's/^\([^\.]*\.[^\.]*\)\.\{0,1\}.*$/\\1.dev/'`;
+        DEV_HOSTNAME=`echo ${DEV_PROJECTPATH} | sed -e 's/\//\./g' -e 's/^\([^\.]*\.[^\.]*\)\.\{0,1\}.*$/\\1'${DOMAINSUFFIX}'/'`;
         if [ ".." != "`echo ${DEV_HOSTNAME} | sed -e 's/[^\.]//g'`" ]; then
             DEV_HOSTNAME='';
         fi
@@ -56,18 +62,6 @@ init() {
 
     # Check which php version to use
     dc php;
-
-    # Check if command exists
-    DEV_EXISTS=false;
-    if [ -n "${DEV_COMMAND}" ] && [ -f "${DEV_COMMANDPATH}/${DEV_COMMAND}" ]; then
-        DEV_EXISTS=true;
-    fi
-
-    # Check if a custom command exists and is executable
-    DEV_CUSTOM_EXISTS=false;
-    if [ -n "${DEV_COMMAND}" ] && [ -x "${DEV_WORKSPACE_PATH}/bin/${DEV_COMMAND}" ]; then
-        DEV_CUSTOM_EXISTS=true;
-    fi
 }
 
 dc() {
@@ -85,8 +79,8 @@ dc() {
     }
 
     run() {
-        cmd=`show`;
-        ${cmd};
+        cmd="`show`";
+        ${cmd} "$@";
         return $?
     }
 
@@ -94,8 +88,29 @@ dc() {
         DEV_DOCKEROPTS=${DEV_DOCKEROPTS}' '"$@";
     }
 
+    interactive() {
+        [ ! ${DEV_INTERACTIVE} ] && opt '-T';
+    }
+
+    nodeps() {
+        opt '--no-deps';
+    }
+
+    user() {
+        opt "-u `id -u`:`id -g`";
+    }
+
+    projectpath() {
+        [ -n "${DEV_PROJECTPATH}" ] \
+           && opt "-w /data/${DEV_PROJECTPATH}"    
+    }
+
     service() {
-        DEV_SERVICE="$@";
+        if [ "$1" == "php" ]; then
+            DEV_SERVICE=${DEV_PHP};
+        else
+            DEV_SERVICE="$@";
+        fi
     }
 
     yml_if() {
@@ -119,6 +134,7 @@ dc() {
         yml 'build/dist/docker-compose-mytop.yml';
         yml 'build/dist/docker-compose-ngrok.yml';
         yml 'build/dist/docker-compose-ctop.yml';
+        yml 'build/dist/docker-compose-node.yml';
     }
 
     yml() {
@@ -126,16 +142,6 @@ dc() {
             return;
         fi
         DEV_YML=${DEV_YML}' -f '${DEV_WORKPATH}'/'$1;
-    }
-
-    yml_os() {
-        if [[ "$(uname)" == 'Darwin' ]]; then
-            DEV_YML=${DEV_YML}' -f '${DEV_WORKPATH}'/docker-compose-osx.yml';
-        elif [[ -n "`uname -r | grep Microsoft`" ]]; then
-            DEV_YML=${DEV_YML}' -f '${DEV_WORKPATH}'/docker-compose-wsl.yml';
-        else
-            DEV_YML=${DEV_YML}' -f '${DEV_WORKPATH}'/docker-compose-linux.yml';
-        fi
     }
 
     yml_ssh() {
@@ -184,9 +190,10 @@ dc() {
 
     env() {
         local envfile=${DEV_WORKPATH}/$1 a='' c='';
-        if [ ! -e ${envfile} ]; then
+        if [ ! -r ${envfile} ]; then
            return 1;
         fi
+
         for a in `cat ${envfile}`; do
             if [ "${a:0:1}" == "#" ]; then
                 continue;
@@ -197,46 +204,54 @@ dc() {
     }
 
     "$@";
-    return $?
+    return $?;
 }
 
 exec_command() {
+    # Check if command exists
+    DEV_COMMAND=$1;
+    shift;
+
+    if [ -z "${DEV_COMMAND}" ] || [ ! -r "${DEV_COMMANDPATH}/${DEV_COMMAND}" ]; then
+        return 1;
+    fi
+
     # Change to command directory
     # This is so all docker-compose commands work out of the box
     cd ${DEV_COMMANDPATH};
 
-    # Load command
-    # Can exit if implemented itself
+    # execute command
     . ./${DEV_COMMAND} "$@";
-
-    # Execute command
-    dc run;
-    exit $?;
+    return $?;
 }
 
 exec_custom() {
-    # Change to command directory
-    # This is so all docker-compose commands work out of the box
-    cd ${DEV_COMMANDPATH};
+    # Check if a custom command exists and is executable
+    DEV_COMMAND=$1;
+    shift;
 
-    # Load command
-    # Can exit if implemented itself
-    . ./custom ${DEV_COMMAND} "$@";
+    if [ -z "${DEV_COMMAND}" ] || [ ! -x "${DEV_WORKSPACE_PATH}/bin/${DEV_COMMAND}" ]; then
+        return 1;
+    fi
 
-    dc run;
-    exit $?;
+    exec_command custom ${DEV_COMMAND} "$@";
+    return $?;
 }
 
 usage() {
-    DEV_COMMAND=usage;
-    exec_command;
+    exec_command usage;
+    return $?;
 }
 
 main() {
-    init "$@";
-    shift;
+    [ $# -lt 1 ] && (usage; return $?);
 
-    ${DEV_EXISTS} && exec_command "$@" || ${DEV_CUSTOM_EXISTS} && exec_custom "$@" || usage;
+    exec_command "$@" || exec_custom "$@";
+    return $?;
 }
 
+init;
+
 main "$@";
+exit $?;
+

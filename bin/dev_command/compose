@@ -1,5 +1,6 @@
 
-dc mode stop;
+dc mode "$1";
+shift;
 
 dc run "$@";
 return $?;

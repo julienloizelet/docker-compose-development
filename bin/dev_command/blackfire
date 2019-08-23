@@ -2,14 +2,28 @@
 dc yml_if 'build/dist/docker-compose-blackfireclient.yml' 'conf/blackfire';
 if [ $? -ne 0 ]; then
     echo 'Blackfire not initialized';
-    exit 1;
+    return 1;
 fi
 
-dc service blackfireclient;
-if [ ! ${DEV_INTERACTIVE} ]; then
-    dc opt '-T';
-fi
-dc opt "--no-deps";
+if [ "$1" != "run" ]; then
+    dc service blackfireclient;
+    dc cmd blackfire;
 
-dc cmd blackfire "$@";
+    dc interactive;
+    dc opt "--no-deps";
+    dc run "$@";
+    return $?;
+else
+    dc service blackfire;
+    bf_q=$(dc run blackfire run /usr/local/bin/dev 2>&1 | grep BLACKFIRE_QUERY);
+
+    bf_r=$(echo $bf_q | sed -e 's#^.*request-id-\([^&]*\)&.*$#\1#');
+    echo 'Profile will be uploaded to: http://blackfire.io/profiles/'${bf_r}'/graph';
+
+    dc opt "-e ${bf_q}";
+    shift;
+
+    . ./console "$@";
+    return $?;
+fi
 

@@ -3,6 +3,8 @@ networks: {}
 volumes:
   dockerdev-mysql-volume:
     external: true
+  dockerdev-workspace-volume:
+    external: true
 
 services:
   db:
@@ -38,6 +40,8 @@ services:
       context: build/dist/php
       args: 
         - FROM_TAG=php5-fpm
+    volumes:
+      - dockerdev-workspace-volume:/data
     links:
       - db
       - mailcatch
@@ -48,6 +52,8 @@ services:
       context: build/dist/php
       args: 
         - FROM_TAG=php7-fpm
+    volumes:
+      - dockerdev-workspace-volume:/data
     links:
       - db
       - mailcatch
@@ -58,6 +64,8 @@ services:
       context: build/dist/php
       args: 
         - FROM_TAG=php71-fpm
+    volumes:
+      - dockerdev-workspace-volume:/data
     links:
       - db
       - mailcatch
@@ -68,6 +76,8 @@ services:
       context: build/dist/php
       args: 
         - FROM_TAG=php72-fpm
+    volumes:
+      - dockerdev-workspace-volume:/data
     links:
       - db
       - mailcatch
@@ -78,6 +88,20 @@ services:
       context: build/dist/php
       args: 
         - FROM_TAG=php73-fpm
+    volumes:
+      - dockerdev-workspace-volume:/data
+    links:
+      - db
+      - mailcatch
+      - redis
+    network_mode: bridge
+  php74:
+    build:
+      context: build/dist/php
+      args: 
+        - FROM_TAG=php74-fpm
+    volumes:
+      - dockerdev-workspace-volume:/data
     links:
       - db
       - mailcatch
@@ -91,6 +115,8 @@ services:
   web:
     build:
       context: build/dist/web
+    volumes:
+        - dockerdev-workspace-volume:/data:ro
     environment:
       - DOMAINSUFFIX
     links:
@@ -101,12 +127,13 @@ services:
       - php71:fpm71
       - php72:fpm72
       - php73:fpm73
+      - php74:fpm74
     network_mode: bridge
   ssl:
     build:
       context: build/dist/ssl
     ports:
-        - "127.0.0.1:80:80"
-        - "127.0.0.1:443:443"
+        - "80:80"
+        - "443:443"
     network_mode: bridge
 
