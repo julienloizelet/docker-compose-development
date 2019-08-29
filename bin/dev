@@ -2,7 +2,7 @@
 
 init() {
 
-    DEV_SELF=$(basename $0);
+    DEV_SELF=$(realpath $0);
 
     DEV_PATH=$(realpath $(dirname $0));
     DEV_WORKPATH=$(dirname ${DEV_PATH});
