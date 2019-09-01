@@ -1,5 +1,6 @@
 version: '3'
 services:
+  # I add volume to work on my own Magento 2 modules with composer
   php56:
     volumes:
       - /some/local/path/to/my-module:/data/some-name/project/my-own-modules/my-module-name
@@ -21,3 +22,15 @@ services:
   web:
     volumes:
       - /some/local/path/to/my-module:/data/some-name/project/my-own-modules/my-module-name
+  # I add Phpmyadmin because I can
+  phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        container_name: dockerdev-phpmyadmin
+        network_mode: bridge
+        ports:
+          - "8081:80"
+        links:
+          - "db:mysql"
+        environment:
+          PMA_HOST: "mysql"
+          PMA_PORT: 3306

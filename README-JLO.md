@@ -1,10 +1,20 @@
+# Before starting :
+
+Suppose that you have clone the `docker-compose-development` in `/some/path/to/the/clone`.
+
+1. Add this to your aliases : 
+
+      alias dev='/some/path/to/the/clone/bin/dev'
+2. Create a `docker-custom.yml` file based on the `docker-custom.yml.dist` in order to add a 
+`phpmyadmin` container that we will use to create an empty database.
+
 # How to set up a Magento 2 test environment 
 
-1)  once the `bin/dev setup` has been successfully launched, 
+1)  Launch the `dev setup` process. 
 
 2) Install Magento 2 in the workspace folder by running :
 
-     `bin/dev composer create-project --repository=https://repo.magento.com/ magento/project-community-edition julien/magento2`
+     `dev composer create-project --repository=https://repo.magento.com/ magento/project-community-edition some-name/project-name`
 
  Beware that the folder determines the final url as it is said here :
 
@@ -12,7 +22,7 @@
 > `workspace/test/project/htdocs` => `https://test.project.localhost/`
 
 3) Files Permission :
-     - `cd workspace/julien/magento2`
+     - `cd workspace/some-name/project-name`
      - `find var generated vendor pub/static pub/media app/etc -type f -exec chmod g+w {} +`
      - `find var generated vendor pub/static pub/media app/etc -type d -exec chmod g+ws {} +`
      - `sudo chown -R :www-data . `
@@ -23,8 +33,8 @@
 
 5) Install in command line :
 
-     - From `workspace/julien/magento2` folder , launch `dev php bin/magento setup:install \
-                 --base-url=https://julien.magento2.localhost \
+     - From `workspace/some-name/project-name` folder , launch `dev php bin/magento setup:install \
+                 --base-url=https://some-name.project-name.localhost \
                  --db-host=db \
                  --db-name=magento2 \
                  --db-user=root \
@@ -40,14 +50,13 @@
                  --timezone=America/Chicago \
                  --use-rewrites=1
                  
-6) Browse to `https://julien.magento2.localhost`
+6) Browse to `https://some-name.project.localhost`
 
     - Enjoy OR                
                  
-    - If css is visibly broken and the css path contains version number, you should try to disable it in mysql :
+    - known issue 1 : If css is visibly broken and the css path contains version number, you should try to disable it in mysql :
 `INSERT INTO core_config_data (path, value) VALUES ('dev/static/sign', 0)
  ON DUPLICATE KEY UPDATE value = 0;`
-
 
 # Use git for a Magento 2 project from scratch
 
@@ -55,9 +64,7 @@
  - run `git init`
  - run `git add .`
  - run `git commit -m "Initial Commit Magento 2 installation"`
-
-                
-`
+         
 # Working with Varnish and Magento 2
 
 see https://github.com/JeroenBoersma/docker-compose-development/issues/102
@@ -85,22 +92,14 @@ see https://github.com/JeroenBoersma/docker-compose-development/issues/92
      
 You should add some alias in your `.bash_aliases` for example :
 
-          cache-clean.js () {
-                  dev php /data/.composer/vendor/mage2tv/magento-cache-clean/bin/generate-cache-clean-config.php
-                  dev node /data/.composer/vendor/mage2tv/magento-cache-clean/bin/cache-clean.js "$@"
-          }
+    cache-clean.js () {
+       dev php /data/.composer/vendor/mage2tv/magento-cache-clean/bin/generate-cache-clean-config.php
+       dev node /data/.composer/vendor/mage2tv/magento-cache-clean/bin/cache-clean.js "$@"
+    }
 With this alias, you just have to run `cache-clean.js --watch` in your Magento 2 folder.
          
 
-# How to manage your own extension
-
-
-
-## Working as a merchant developer
-
-Just put your code in `app/code`
-
-## Working as an extension developer
+# How to manage your own extension separately
 
 Suppose that you want to work on a module called `my-module-name` and that your local sources for this module
 are in `some/local/path/to/my-module`. We suppose too that your Magento 2 project is in a subfolder of `workspace` called `some-name/project`.
@@ -118,7 +117,8 @@ You can use the `docker-custom.yml.dist` file as a model.
       
 - Then, supposing that the package name of your module (defined in its `composer.json`) is `vendorName/moduleName` you have to run 
 
-      dev composer require vendorName/moduleName      
+      dev composer require vendorName/moduleName
+          
 and composer will install it by symlinking from `some-name/project/my-own-modules/my-module-name`     
 
 So now you can modify your code in `some/local/path/to/my-module` ànd your modifications will be instantanly 
