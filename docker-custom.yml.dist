@@ -1,0 +1,23 @@
+version: '3'
+services:
+  php56:
+    volumes:
+      - /some/local/path/to/my-module:/data/some-name/project/my-own-modules/my-module-name
+  php70:
+    volumes:
+      - /some/local/path/to/my-module:/data/some-name/project/my-own-modules/my-module-name
+  php71:
+    volumes:
+      - /some/local/path/to/my-module:/data/some-name/project/my-own-modules/my-module-name
+  php72:
+    volumes:
+      - /some/local/path/to/my-module:/data/some-name/project/my-own-modules/my-module-name
+  php73:
+    volumes:
+      - /some/local/path/to/my-module:/data/some-name/project/my-own-modules/my-module-name
+  php74:
+    volumes:
+      - /some/local/path/to/my-module:/data/some-name/project/my-own-modules/my-module-name
+  web:
+    volumes:
+      - /some/local/path/to/my-module:/data/some-name/project/my-own-modules/my-module-name
