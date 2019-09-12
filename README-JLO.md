@@ -77,6 +77,9 @@ see https://github.com/JeroenBoersma/docker-compose-development/issues/102
      dev varnish-vcl-disable
      # renames file from varnish.vcl -> varnish.vcl.off
      
+     au cas où:
+     https://github.com/JeroenBoersma/docker-compose-development/issues/65
+     
 # Working with Mage2TV clean-cache
 
 see https://github.com/JeroenBoersma/docker-compose-development/issues/92
@@ -123,3 +126,11 @@ and composer will install it by symlinking from `some-name/project/my-own-module
 
 So now you can modify your code in `some/local/path/to/my-module` ànd your modifications will be instantanly 
 visible in your docker project.
+
+
+
+@TODO :
+see asciineme here to install with redis :
+https://asciinema.org/a/254081
+
+
