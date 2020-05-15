@@ -80,6 +80,11 @@ see https://github.com/JeroenBoersma/docker-compose-development/issues/102
      au cas où:
      https://github.com/JeroenBoersma/docker-compose-development/issues/65
      
+     
+Pour flushe le cache Varnish (https://github.com/JeroenBoersma/docker-compose-development/issues/113):
+
+     dev varnishadm ban "req.url ~ /"
+     
 # Working with Mage2TV clean-cache
 
 see https://github.com/JeroenBoersma/docker-compose-development/issues/92
