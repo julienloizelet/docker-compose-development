@@ -132,7 +132,18 @@ and composer will install it by symlinking from `some-name/project/my-own-module
 So now you can modify your code in `some/local/path/to/my-module` ànd your modifications will be instantanly 
 visible in your docker project.
 
+## Dockerized Magento 2 and Phpstorm
 
+
+To generate xsd schema mapping, go to the path of Magento 2 installation directory 
+
+    cd /some/path/to/the/clone/workspace/m23/magento2
+
+And run the following commmand :
+
+    dev php bin/magento dev:urn-catalog:generate .idea/misc.xml 
+
+Maybe you should have to delete first the `.idea/misc.xml`.    
 
 @TODO :
 see asciineme here to install with redis :
