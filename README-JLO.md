@@ -21,6 +21,11 @@ Suppose that you have clone the `docker-compose-development` in `/some/path/to/t
 > You will notice that this has a 1-on-1 relation to the hostname provided in your hostfile:
 > `workspace/test/project/htdocs` => `https://test.project.localhost/`
 
+
+Example : `dev composer create-project --repository=https://repo.magento.com/ magento/project-community-edition m24/magento2 2.4.0`
+wil install Magento 2.4.0 and url will be `http://m24.magento2.localhost/`
+(php 7.3 is mandatory for a 2.4 installation, so create a file `.php73` on the workspace directory.)
+
 3) Files Permission :
      - `cd workspace/some-name/project-name`
      - `find var generated vendor pub/static pub/media app/etc -type f -exec chmod g+w {} +`
@@ -48,7 +53,8 @@ Suppose that you have clone the `docker-compose-development` in `/some/path/to/t
                  --language=en_US \
                  --currency=USD \
                  --timezone=America/Chicago \
-                 --use-rewrites=1
+                 --use-rewrites=1 \
+                 --elasticsearch-host=elasticsearch
                  
 6) Browse to `https://some-name.project.localhost`
 
@@ -148,5 +154,13 @@ Maybe you should have to delete first the `.idea/misc.xml`.
 @TODO :
 see asciineme here to install with redis :
 https://asciinema.org/a/254081
+
+
+To run copy paste detector on the full project :
+
+    dev php -d memory_limit=-1 /data/m23/magento2/./vendor/bin/phpcpd --log-pmd '/data/m23/magento2/dev/tests/static/report/phpcpd_report.xml' --names-exclude "*Test.php"  --min-lines 13  --exclude 'generated/code' --exclude 'dev' /data/m23/magento2 
+`
+
+
 
 
