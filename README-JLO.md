@@ -1,3 +1,5 @@
+> Here is a list of personal notes. 
+
 # Before starting :
 
 Suppose that you have clone the `docker-compose-development` in `/some/path/to/the/clone`.
@@ -10,7 +12,7 @@ Suppose that you have clone the `docker-compose-development` in `/some/path/to/t
 
 # How to set up a Magento 2 test environment 
 
-1)  Launch the `dev setup` process. 
+1)  Launch the `dev setup` process. (say "yes" for elastic search as it is mandatory for 2.4)
 
 2) Install Magento 2 in the workspace folder by running :
 
@@ -25,6 +27,11 @@ Suppose that you have clone the `docker-compose-development` in `/some/path/to/t
 Example : `dev composer create-project --repository=https://repo.magento.com/ magento/project-community-edition m24/magento2 2.4.0`
 wil install Magento 2.4.0 and url will be `http://m24.magento2.localhost/`
 (php 7.3 is mandatory for a 2.4 installation, so create a file `.php73` on the workspace directory.)
+
+If you get an error like `PHP Fatal error:  Allowed memory size ...`, use `dev php -d memory_limit=-1 
+/usr/local/bin/composer ...` instead of `dev composer ...`
+
+@see https://github.com/JeroenBoersma/docker-compose-development/issues/124#issue-601933753
 
 3) Files Permission :
      - `cd workspace/some-name/project-name`
@@ -87,7 +94,7 @@ see https://github.com/JeroenBoersma/docker-compose-development/issues/102
      https://github.com/JeroenBoersma/docker-compose-development/issues/65
      
      
-Pour flushe le cache Varnish (https://github.com/JeroenBoersma/docker-compose-development/issues/113):
+To flush the Varnish cache (https://github.com/JeroenBoersma/docker-compose-development/issues/113):
 
      dev varnishadm ban "req.url ~ /"
      
@@ -114,6 +121,14 @@ With this alias, you just have to run `cache-clean.js --watch` in your Magento 2
          
 
 # How to manage your own extension separately
+
+## Option 1 (lazy one)
+
+Clone your module in `app/code/VendorName/ModuleName`
+
+
+## Option 2 (composer way)
+
 
 Suppose that you want to work on a module called `my-module-name` and that your local sources for this module
 are in `some/local/path/to/my-module`. We suppose too that your Magento 2 project is in a subfolder of `workspace` called `some-name/project`.
@@ -151,10 +166,10 @@ And run the following commmand :
 
 Maybe you should have to delete first the `.idea/misc.xml`.    
 
-@TODO :
-see asciineme here to install with redis :
-https://asciinema.org/a/254081
 
+## Marketplace validation : 
+
+### copy/paste validation
 
 To run copy paste detector on the full project :
 
@@ -163,4 +178,30 @@ To run copy paste detector on the full project :
 
 
 
+## Sample data :
 
+- go to the path of Magento 2 installation directory
+- `dev php -d memory_limit=-1 bin/magento sampledata:deploy`
+- `dev php bin/magento setup:upgrade`
+- wait for ages
+
+
+## Elastic search
+
+- Since 2.4, if elastic search is version 6, you have to modify catalog search engine (version AND host)
+
+then (if you want to see products on front ...)
+
+- magento->admin->stores->configuration->catalog->catalog
+  search->Search Engine->... and selected "Elasticsearch 6.x (Deprecated)".
+- `dev php bin/magento cache:flush`
+- `dev php bin/magento indexer:reindex`
+
+
+
+## Magento 2.4 2FA (2 factor authorization)
+To disable this module : 
+
+```
+dev php bin/magento module:disable Magento_TwoFactorAuth
+dev php bin/magento cache:flush
