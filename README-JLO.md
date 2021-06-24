@@ -205,3 +205,7 @@ To disable this module :
 ```
 dev php bin/magento module:disable Magento_TwoFactorAuth
 dev php bin/magento cache:flush
+```
+
+## Mailhog
+http://mail.localhost/
